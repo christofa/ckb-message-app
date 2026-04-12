@@ -1,30 +1,30 @@
-import { ccc } from "@ckb-ccc/core";
+import { ccc } from "@ckb-\ccc/core";
 
-export type Network = "devnet" | "testnet";
+// We use the Testnet (ckt1) for learning
+const client = ccc.clientTestnet;
 
-// Change to "testnet" when you want to use the public CKB testnet.
-const NETWORK: Network = "devnet";
+export async function sendMessage(privKey: string, message: string) {
+  // 1. Initialize the Signer
+  const signer = new ccc.SignerCkbPrivateKey(client, privKey);
+  const [{ script: lockScript }] = await signer.getAddressObjs();
 
-export function createCkbClient(network: Network = NETWORK) {
-  return network === "testnet"
-    ? new ccc.ClientPublicTestnet()
-    : new ccc.ClientPublicTestnet({
-        url: "http://localhost:28114",
-      });
+  // 2. Convert Message to Hex
+  // CKB data field must be in hex format
+  const data = ccc.bytesFrom(Buffer.from(message, "utf-8"));
+
+  // 3. Create a Transaction Skeleton
+  // We are creating a new cell with our message in the 'data' field
+  const tx = ccc.Transaction.from({
+    outputs: [{
+      lock: lockScript,
+    }],
+    outputsData: [data],
+  });
+
+  // 4. Complete, Sign, and Send
+  // CCC automatically handles "Change" cells and Fee calculation
+  await tx.completeInputsAndChange(signer);
+  const txHash = await signer.sendTransaction(tx);
+
+  return txHash;
 }
-
-export const ckbClient = createCkbClient();
-
-export async function checkCkbConnection(network: Network = NETWORK) {
-  const client = createCkbClient(network);
-  const tip = await client.getTip();
-
-  return {
-    network,
-    url: client.url,
-    tip: tip.toString(),
-  };
-}
-
-export const PRIVATE_KEY =
-  "0x6109170b275a09ad54877b82f7d9930f88cab5717d484fb4741ae9d1dd078cd6";
