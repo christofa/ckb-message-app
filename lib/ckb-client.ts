@@ -1,17 +1,14 @@
-import { ClientPublicTestnet } from "@ckb-ccc/core";
+import { ccc } from "@ckb-ccc/core"
 
-// 1. Pull the URL from the environment with a fallback for local dev
-export const CKB_DEVNET_RPC =
-  process.env.NEXT_PUBLIC_CKB_DEVNET_RPC || "http://127.0.0.1:8114";
+// Which node to connect to
+export const CKB_RPC_URL =
+  process.env.NEXT_PUBLIC_CKB_RPC_URL || "http://127.0.0.1:28114"
 
-// 2. Singleton instance for general use
-export const ckbClient = new ClientPublicTestnet({
-  url: CKB_DEVNET_RPC,
-});
+// Connect to the CKB node
+export const ckbClient = new ccc.ClientPublicTestnet({
+  url: CKB_RPC_URL,
+})
 
-/**
- * Helper to create a custom client if you ever need to 
- * connect to a different node on the fly.
- */
-export const createCkbClient = (rpcUrl = CKB_DEVNET_RPC) =>
-  new ClientPublicTestnet({ url: rpcUrl });
+// Test account private key (never use on mainnet!)
+export const PRIVATE_KEY =
+  "0x6109170b275a09ad54877b82f7d9930f88cab5717d484fb4741ae9d1dd078cd6"
