@@ -1,35 +1,27 @@
 import { ccc } from "@ckb-ccc/core"
 import { ckbClient, PRIVATE_KEY } from "./ckb-client"
 
-// ─── Helper: turn plain text into hex ───────────────────
-// CKB can't store "Hello" directly — it stores bytes
-// This converts "Hello" → "0x48656c6c6f"
+// ─── Step1: Turn plain text into hex ─────
 function textToHex(text: string): string {
   const bytes = new TextEncoder().encode(text)
-  // TextEncoder converts each character to its byte value
-  // e.g. "H" → 72, "e" → 101, "l" → 108 etc
 
   return ( 
     "0x" +
     Array.from(bytes)
       .map(b => b.toString(16).padStart(2, "0"))
-      // toString(16) converts number to hex: 72 → "48"
-      // padStart(2,"0") ensures 2 digits: "8" → "08"
       .join("")
   )
 }
 
-// ─── Helper: turn hex back into plain text ───────────────
-// This is the reverse: "0x48656c6c6f" → "Hello"
+// ───- Step2: Turn hex back into plain text ─────
 export function hexToText(hex: string): string {
   const bytes = new Uint8Array(
     hex
-      .slice(2) // remove the "0x" prefix
-      .match(/.{1,2}/g)! // split into pairs: ["48","65","6c","6c","6f"]
-      .map(b => parseInt(b, 16)) // convert each pair to number: 72,101,108...
+      .slice(2) 
+      .match(/.{1,2}/g)!
+      .map(b => parseInt(b, 16)) 
   )
   return new TextDecoder().decode(bytes)
-  // TextDecoder converts bytes back to readable text
 }
 
 // ─── Store a message on CKB ──────────────────────────────
@@ -84,3 +76,46 @@ export async function storeMessage(message: string): Promise<string> {
   return txHash
 }
 
+// ─── Fetch all messages stored on chain ──────────────────
+export async function fetchMessages(): Promise<
+  { message: string; txHash: string }[]
+> {
+  // Step 1: Create signer and get your address + lock script
+  const signer = new ccc.SignerCkbPrivateKey(ckbClient, PRIVATE_KEY)
+  const address = await signer.getRecommendedAddress()
+  const { script: lockScript } = await ccc.Address.fromString(
+    address,
+    ckbClient
+  )
+
+  // Step 2: Create empty array to store results
+  const messages: { message: string; txHash: string }[] = []
+
+  // Step 3: Search the blockchain for ALL cells you own
+  const collector = ckbClient.findCellsByLock(lockScript, null, true)
+
+  // Step 4: Loop through every cell found
+  for await (const cell of collector) {
+
+    // Step 5: Skip cells with no data (empty boxes)
+    if (!cell.outputData || cell.outputData === "0x") continue
+
+    try {
+      // Step 6: Convert hex data back to readable text
+      const message = hexToText(cell.outputData)
+
+      // Step 7: Only keep it if it looks like real text
+      if (message.trim().length > 0) {
+        messages.push({
+          message,
+          txHash: cell.outPoint.txHash,
+        })
+      }
+    } catch {
+      // If decoding fails just skip that cell silently
+    }
+  }
+
+  // Step 8: Return all messages found
+  return messages
+}
