@@ -87,6 +87,7 @@ export async function fetchMessages(): Promise<
         })
       }
     } catch {
+        console.error("Failed to decode cell data, skipping...")
       // If decoding fails just skip that cell silently
     }
   }
