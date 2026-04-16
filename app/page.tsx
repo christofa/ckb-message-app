@@ -3,15 +3,15 @@ import MessageList from "@/components/MessageList"
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-2xl mx-auto">
+    <main className="min-h-screen bg-black p-8 text-white">
+      <div className="max-w-2xl mx-auto flex flex-col h-screen justify-center">
 
         {/* App header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900">
+          <h1 className="text-4xl font-extrabold text-white">
             CKB Message App 💬
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">
+          <p className="text-gray-400 mt-1 text-sm">
             Store messages permanently on the CKB blockchain
           </p>
         </div>

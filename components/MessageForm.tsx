@@ -52,7 +52,7 @@ export default function MessageForm() {
         <button
           type="submit"
           disabled={loading || !message.trim()}
-          className="bg-teal-500 text-white font-bold py-2.5 px-6 rounded-xl hover:bg-teal-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-teal-600 text-white font-bold py-2.5 px-6 rounded-xl hover:bg-teal-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Storing on chain..." : "Store Message"}
           {/* Shows different text depending on loading state */}
