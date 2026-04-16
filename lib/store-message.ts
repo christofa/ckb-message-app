@@ -1,6 +1,8 @@
 import { ccc } from "@ckb-ccc/core"
 import { ckbClient, PRIVATE_KEY } from "./ckb-client"
 
+const MESSAGE_PREFIX = "ckb-msg:"
+
 // ─── Step1: Turn plain text into hex ─────
 function textToHex(text: string): string {
   const bytes = new TextEncoder().encode(text)
@@ -28,34 +30,32 @@ export function hexToText(hex: string): string {
 export async function storeMessage(message: string): Promise<string> {
   const signer = new ccc.SignerCkbPrivateKey(ckbClient, PRIVATE_KEY)
   const address = await signer.getRecommendedAddress()
-  const messageHex = textToHex(message)
-
   const { script: lockScript } = await ccc.Address.fromString(
     address,
     ckbClient
   )
 
+  // Add prefix so we can identify our messages later
+  // "Hello" becomes "ckb-msg:Hello" before storing
+  const taggedMessage = MESSAGE_PREFIX + message
+  const messageHex = textToHex(taggedMessage)
+
   const tx = ccc.Transaction.from({
-    outputs: [
-      {
-        lock: lockScript,
-      },
-    ],
+    outputs: [{ lock: lockScript }],
     outputsData: [messageHex],
   })
 
   await tx.completeInputsByCapacity(signer)
   await tx.completeFeeBy(signer, 1000)
-
   const txHash = await signer.sendTransaction(tx)
   return txHash
 }
 
 // ─── Step4: Fetch all messages stored on chain ───────────
+// We add a prefix to identify OUR messages
 export async function fetchMessages(): Promise<
   { message: string; txHash: string }[]
 > {
-  // Step 1: Create signer and get your address + lock script
   const signer = new ccc.SignerCkbPrivateKey(ckbClient, PRIVATE_KEY)
   const address = await signer.getRecommendedAddress()
   const { script: lockScript } = await ccc.Address.fromString(
@@ -63,32 +63,26 @@ export async function fetchMessages(): Promise<
     ckbClient
   )
 
-  // Step 2: Create empty array to store results
   const messages: { message: string; txHash: string }[] = []
-
-  // Step 3: Search the blockchain for ALL cells you own
   const collector = ckbClient.findCellsByLock(lockScript, null, true)
 
-  // Step 4: Loop through every cell found
   for await (const cell of collector) {
-
-    // Step 5: Skip cells with no data (empty boxes)
     if (!cell.outputData || cell.outputData === "0x") continue
 
     try {
-      // Step 6: Convert hex data back to readable text
-      const message = hexToText(cell.outputData)
+      const decoded = hexToText(cell.outputData)
 
-      // Step 7: Only keep it if it looks like real text
-      if (message.trim().length > 0) {
+      // Only keep cells that start with our prefix
+      // This filters out DOB images and other non-message cells
+      if (decoded.startsWith(MESSAGE_PREFIX)) {
         messages.push({
-          message,
+          // Remove the prefix before showing to user
+          message: decoded.slice(MESSAGE_PREFIX.length),
           txHash: cell.outPoint.txHash,
         })
       }
     } catch {
-        console.error("Failed to decode cell data, skipping...")
-      // If decoding fails just skip that cell silently
+      // skip cells that can't be decoded
     }
   }
 
