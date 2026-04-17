@@ -36,7 +36,6 @@ export async function storeMessage(message: string): Promise<string> {
   )
 
   // Add prefix so we can identify our messages later
-  // "Hello" becomes "ckb-msg:Hello" before storing
   const taggedMessage = MESSAGE_PREFIX + message
   const messageHex = textToHex(taggedMessage)
 
@@ -52,7 +51,6 @@ export async function storeMessage(message: string): Promise<string> {
 }
 
 // ─── Step4: Fetch all messages stored on chain ───────────
-// We add a prefix to identify OUR messages
 export async function fetchMessages(): Promise<
   { message: string; txHash: string }[]
 > {
@@ -72,8 +70,7 @@ export async function fetchMessages(): Promise<
     try {
       const decoded = hexToText(cell.outputData)
 
-      // Only keep cells that start with our prefix
-      // This filters out DOB images and other non-message cells
+
       if (decoded.startsWith(MESSAGE_PREFIX)) {
         messages.push({
           // Remove the prefix before showing to user
@@ -82,7 +79,7 @@ export async function fetchMessages(): Promise<
         })
       }
     } catch {
-      // skip cells that can't be decoded
+        console.error("Failed to decode cell data:", cell.outputData)
     }
   }
 
