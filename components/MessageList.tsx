@@ -73,10 +73,6 @@ export default function MessageList() {
           ))}
         </div>
       )}
-
-
-
-      <p>Powered By Chris</p>
     </div>
   );
 }
