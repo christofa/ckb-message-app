@@ -14,7 +14,14 @@ export const PRIVATE_KEY =
   "0x6109170b275a09ad54877b82f7d9930f88cab5717d484fb4741ae9d1dd078cd6";
 
 
-// import { ccc } from "@ckb-ccc/core";
+ export const getPrivateKey = () => {
+  if (!PRIVATE_KEY) {
+    throw new Error("SECURE_ERROR: CKB_PRIVATE_KEY is not defined in environment variables.");
+  }
+  return PRIVATE_KEY;
+};
+
+
 
 // /**
 //  * 1. RPC URL Configuration
