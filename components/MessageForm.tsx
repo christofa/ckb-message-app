@@ -9,28 +9,34 @@ export default function MessageForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  if (!message.trim()) return
 
-    if (!message.trim()) return;
+  setLoading(true)
+  setError("")
+  setTxHash("")
 
-    // Reset previous results and show loading
-    setLoading(true);
-    setError("");
-    setTxHash("");
+  try {
+    // Call our API route instead of CKB directly
+    const res = await fetch("/api/store", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    })
 
-    try {
-      // Call our function from store-message.ts
-      const hash = await storeMessage(message);
+    const data = await res.json()
 
-      setTxHash(hash);
-      setMessage("");
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
+    if (!res.ok) throw new Error(data.error)
+
+    setTxHash(data.txHash)
+    setMessage("")
+  } catch (err: any) {
+    setError(err.message || "Something went wrong")
+  } finally {
+    setLoading(false)
+  }
+}
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
