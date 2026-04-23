@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { storeMessage } from "@/lib/store-message";
 
 export default function MessageForm() {
   const [message, setMessage] = useState("");

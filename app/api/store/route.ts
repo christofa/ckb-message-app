@@ -6,7 +6,6 @@ const CKB_RPC_URL =
 
 const PRIVATE_KEY = process.env.CKB_PRIVATE_KEY || ""
 
-// This runs on the SERVER — private key is safe here
 export async function POST(req: NextRequest) {
   try {
     const { message } = await req.json()
@@ -44,7 +43,7 @@ export async function POST(req: NextRequest) {
         .map(b => b.toString(16).padStart(2, "0"))
         .join("")
 
-    // Build and send transaction
+    // Build transaction
     const tx = ccc.Transaction.from({
       outputs: [{ lock: lockScript }],
       outputsData: [messageHex],
@@ -52,11 +51,16 @@ export async function POST(req: NextRequest) {
 
     await tx.completeInputsByCapacity(signer)
     await tx.completeFeeBy(signer, 1000)
-    const txHash = await signer.sendTransaction(tx)
+
+    // Sign first, then send via client directly
+    const signedTx = await signer.signTransaction(tx)
+    const txHash = await client.sendTransaction(signedTx)
 
     return NextResponse.json({ txHash })
 
   } catch (err: any) {
+    // Log the actual error so we can see it in terminal
+    console.error("Store error:", err.message)
     return NextResponse.json(
       { error: err.message || "Something went wrong" },
       { status: 500 }

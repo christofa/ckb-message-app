@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchMessages } from "@/lib/store-message";
 
 // Define what a message object looks like
 type Message = {
@@ -13,17 +12,22 @@ export default function MessageList() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadMessages = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchMessages();
-      setMessages(data);
-    } catch (err) {
-      console.error("Failed to fetch:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+ const loadMessages = async () => {
+  setLoading(true)
+  try {
+    // Call our API route instead of CKB directly
+    const res = await fetch("/api/messages")
+    const data = await res.json()
+
+    if (!res.ok) throw new Error(data.error)
+
+    setMessages(data.messages)
+  } catch (err) {
+    console.error("Failed to fetch:", err)
+  } finally {
+    setLoading(false)
+  }
+}
 
   useEffect(() => {
     loadMessages();
