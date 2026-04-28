@@ -55,8 +55,8 @@ export async function POST(req: NextRequest) {
     })
 
     // 🧠 Debug logs (super useful)
-    console.log("Address:", address)
-    console.log("Message Hex:", messageHex)
+    // console.log("Address:", address)
+    // console.log("Message Hex:", messageHex)
 
     await tx.completeInputsByCapacity(signer)
     await tx.completeFeeBy(signer, 1000)
