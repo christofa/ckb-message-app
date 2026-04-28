@@ -1,12 +1,13 @@
-import { ccc } from "@ckb-ccc/core";
+import { ccc } from "@ckb-ccc/core"
 
-// Which node to connect to
-export const CKB_RPC_URL =
-  process.env.NEXT_PUBLIC_CKB_RPC_URL || "http://127.0.0.1:28114";
+const CKB_RPC_URL =
+  process.env.NEXT_PUBLIC_CKB_RPC_URL || "http://127.0.0.1:28114"
 
-// Connect to the CKB node
-export const ckbClient = new ccc.ClientPublicTestnet({
-  url: CKB_RPC_URL,
-});
+export function createClient() {
+  // ✅ Use this for devnet to avoid testnet cellDeps
+  return new ccc.ClientPublicMainnet({
+    url: CKB_RPC_URL,
+  })
+}
 
-
+export const PRIVATE_KEY = process.env.CKB_PRIVATE_KEY || ""

@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ccc } from "@ckb-ccc/core"
-
-const CKB_RPC_URL =
-  process.env.NEXT_PUBLIC_CKB_RPC_URL || "http://127.0.0.1:28114"
-
-const PRIVATE_KEY = process.env.CKB_PRIVATE_KEY || ""
+import { createClient, PRIVATE_KEY } from "@/lib/ckb-client"
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,18 +20,22 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Connect to CKB node
-    const client = new ccc.ClientPublicTestnet({ url: CKB_RPC_URL })
+    // ✅ Use your shared client (offckb devnet)
+    const client = createClient()
+
     const signer = new ccc.SignerCkbPrivateKey(client, PRIVATE_KEY)
+
     const address = await signer.getRecommendedAddress()
+
     const { script: lockScript } = await ccc.Address.fromString(
       address,
       client
     )
 
-    // Convert message to hex
+    // ✅ Encode message
     const MESSAGE_PREFIX = "ckb-msg:"
     const tagged = MESSAGE_PREFIX + message
+
     const bytes = new TextEncoder().encode(tagged)
     const messageHex =
       "0x" +
@@ -43,24 +43,31 @@ export async function POST(req: NextRequest) {
         .map(b => b.toString(16).padStart(2, "0"))
         .join("")
 
-    // Build transaction
+    // ✅ IMPORTANT: include capacity
     const tx = ccc.Transaction.from({
-      outputs: [{ lock: lockScript }],
+      outputs: [
+        {
+          lock: lockScript,
+          capacity: ccc.fixedPointFrom(61), // minimum required
+        },
+      ],
       outputsData: [messageHex],
     })
+
+    // 🧠 Debug logs (super useful)
+    console.log("Address:", address)
+    console.log("Message Hex:", messageHex)
 
     await tx.completeInputsByCapacity(signer)
     await tx.completeFeeBy(signer, 1000)
 
-    // Sign first, then send via client directly
-    const signedTx = await signer.signTransaction(tx)
-    const txHash = await client.sendTransaction(signedTx)
+    const txHash = await signer.sendTransaction(tx)
 
     return NextResponse.json({ txHash })
 
   } catch (err: any) {
-    // Log the actual error so we can see it in terminal
-    console.error("Store error:", err.message)
+    console.error("FULL ERROR:", err)
+
     return NextResponse.json(
       { error: err.message || "Something went wrong" },
       { status: 500 }
