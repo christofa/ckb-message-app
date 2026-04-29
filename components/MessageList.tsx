@@ -1,43 +1,50 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"
+import { fetchMessages } from "@/lib/store-message"
 
 // Define what a message object looks like
 type Message = {
-  message: string;
-  txHash: string;
-};
-
-export default function MessageList() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
-
- const loadMessages = async () => {
-  setLoading(true)
-  try {
-    // Call our API route instead of CKB directly
-    const res = await fetch("/api/messages")
-    const data = await res.json()
-
-    if (!res.ok) throw new Error(data.error)
-
-    setMessages(data.messages)
-  } catch (err) {
-    console.error("Failed to fetch:", err)
-  } finally {
-    setLoading(false)
-  }
+  message: string
+  txHash: string
 }
 
+export default function MessageList() {
+
+  const [messages, setMessages] = useState<Message[]>([])
+  // messages = array of all messages fetched from chain
+
+  const [loading, setLoading] = useState(true)
+  // starts as true because we load immediately on mount
+
+  // This function fetches messages from the blockchain
+  const loadMessages = async () => {
+    setLoading(true)
+    try {
+      const data = await fetchMessages()
+      setMessages(data)
+    } catch (err) {
+      console.error("Failed to fetch:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // useEffect runs code when the component first appears
+  // The [] means "only run once, when component mounts"
+  // Like an "on page load" event
   useEffect(() => {
-    loadMessages();
-  }, []);
+    loadMessages()
+  }, [])
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6">
+
       {/* Header with title and refresh button */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-gray-900">Messages on Chain</h2>
+        <h2 className="text-lg font-bold text-gray-900">
+          Messages on Chain
+        </h2>
         <button
           onClick={loadMessages}
           className="text-sm text-teal-500 font-semibold hover:underline"
@@ -69,14 +76,19 @@ export default function MessageList() {
               className="p-4 bg-gray-50 rounded-xl border border-gray-100"
             >
               {/* The actual message text */}
-              <p className="text-gray-900 font-medium mb-2">💬 {m.message}</p>
+              <p className="text-gray-900 font-medium mb-2">
+                💬 {m.message}
+              </p>
 
               {/* The transaction hash proof */}
-              <p className="text-xs text-gray-400 break-all">TX: {m.txHash}</p>
+              <p className="text-xs text-gray-400 break-all">
+                TX: {m.txHash}
+              </p>
             </div>
           ))}
         </div>
       )}
+
     </div>
-  );
+  )
 }
